@@ -1,0 +1,1 @@
+select index_name, table_name from user_indexes;
