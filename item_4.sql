@@ -1,127 +1,93 @@
-/* ************************************************************************** */
-/*  Item 1:
-        Consulta os indíces e as tabelas e colunas que eles referenciam**/
-select a.index_name, a.table_name, b.column_name
-from user_indexes a, user_cons_columns b
-where a.index_name = b.constraint_name;
-
-/* ************************************************************************** */
-/*Consulta as constraints do usuario. Usando para ver o metadata das FK e PK*/
-select * from user_constraints;
-
-/*Consulta todas as tabelas colunas referenciadas pelas constraints do usuário*/
-select * from user_cons_columns;
-
-/*  Item 2:
-        Dropa todos os índices criados em uma tabela */
-create or replace procedure drop_all_indexes(nome_tabela in string) is
-begin 
-    for ind in 
-    (
-        select index_name
-        from user_indexes
-        where table_name = nome_tabela
-        and index_name not in
-       (
-            select unique index_name
-            from user_constraints
-            where table_name = nome_tabela
-            and index_name is not null
-       )
-    )
-    loop
-        execute immediate 'drop index'||ind.index_name;
-    end loop;
-end;
-
---execute drop_all_indexes('ALBUM');
-
-/* ************************************************************************** */
-/*  Item 3:
-        Lista as FK com as tabelas e colunas*/
-        
-select a.owner, a.constraint_name, a.table_name, a.column_name
-    from user_cons_columns a, user_constraints b
-    where a.owner = b.owner
-    and b.constraint_type='R'
-    and a.constraint_name = b.constraint_name;
-
-/* ************************************************************************** */
-
-/*Consulta todas as tabelas no schema*/
-select * from user_tables;
-
-/*Consulta as colunas das tabelas do schema*/
-select * from user_tab_columns;
-
-/*Consulta as primary keys das tabelas*/
-/*Vai precisar abrir um cursor com esse comando e iterar sobre o cursor*/
-select cols.table_name, cols.column_name, cols.position, cons.status, cons.owner
-from user_constraints cons, user_cons_columns cols
-where cons.constraint_type = 'P'
-and cons.constraint_name = cols.constraint_name
-and cons.owner = cols.owner
-order by cols.table_name, cols.position;
-/*
-Item 4:
-
-Ideia:
-
-Um cursor pra pegar o nome das tabelas
-Um cursor pra pegar o nome das colunas e criar as colunas
-Um cursor pra dar alter table com primary key
-Um cursor pra dar alter table com foreign keys
-*/
---Aqui pega o nome das tabelas
-SELECT table_name FROM user_tables;
-
---Aqui pega o nome das colunas dado uma tabela
-select table_name, column_name, data_type, data_length
-            from user_tab_columns;
-
 create or replace procedure create_tables is
+v_table_name user_tables.table_name%type;
+
+v_column_name user_tab_columns.column_name%type;
+v_data_type user_tab_columns.data_type%type;
+v_data_length user_tab_columns.data_length%type;
+v_data_table_name user_tab_columns.table_name%type;
+v_data_nullable user_tab_columns.nullable%type;
+
+v_pk user_constraints.constraint_name%type;
+v_pk_table_name user_constraints.table_name%type;
+v_index_name user_cons_columns.column_name%type;
+
+v_counter NUMBER := 0;
+
+cursor c_table_name is
+    select table_name
+    from user_tables;
+cursor c_data is
+    select a.column_name, a.data_type, a.data_length, a.table_name, a.nullable
+    from user_tab_columns a, user_tables b
+    where a.table_name = b.table_name;
+cursor c_pk is
+        select distinct a.constraint_name, a.table_name from user_constraints a
+        where a.constraint_type = 'P';
+cursor c_pkname(v_table_name in user_tables.table_name%type) is
+        select a.column_name
+        from user_cons_columns a, user_constraints b
+        where a.owner = b.owner
+        and b.constraint_type='P'
+        and a.constraint_name = b.constraint_name
+        and a.table_name = v_table_name;
     BEGIN
-
-    for ind in(
-        select table_name
-        from user_tables
-    )
-
+    open c_table_name; --step 1: criar tabelas com colunas e primary keys
+    
     --Colunas
-    loop
-    DBMS_OUTPUT.PUT_LINE('CREATE TABLE '||ind.table_name||'(');
-    for r in(
-        select column_name, data_type, data_length
-        from user_tab_columns
-        where table_name = ind.table_name
-    )
-    loop    
-    DBMS_OUTPUT.PUT_LINE(r.column_name||' '||r.data_type||'('||r.data_length||'),');
-    end loop;
---
---    --PK
---    for pk in (
---        select distinct a.constraint_name from user_constraints a
---        where a.constraint_type = 'P'
---    )
---    loop
---    DBMS_OUTPUT.PUT_LINE('CONSTRAINT' || pk.constraint_name || 'PRIMARY KEY (');
---    for prim_key in (
---        select cols.column_name
---        from user_constraints cons, user_cons_columns cols
---        where cons.constraint_type = 'P'
---        and cons.constraint_name = pk.constraint_name
---        and cons.owner = cols.owner
---        order by cols.table_name, cols.position
---    )
---    loop
---    DBMS_OUTPUT.PUT_LINE(prim_key.column_name || ',');
---    end loop;
-
-    end loop;
+    loop--Table name - Create
+        fetch c_table_name into v_table_name;
+        exit when c_table_name%notfound;
+        DBMS_OUTPUT.PUT_LINE('CREATE TABLE '||v_table_name||'(');   
+        open c_data;
+        loop --Colums
+            fetch c_data into v_column_name, v_data_type, v_data_length, v_data_table_name, v_data_nullable;
+            exit when c_data%notfound;
+                if(v_data_table_name = v_table_name) then
+--                    DBMS_OUTPUT.PUT_LINE(v_column_name||' '||v_data_type||'('||v_data_length||'),');
+                    DBMS_OUTPUT.PUT(v_column_name||' '||v_data_type);
+                    if (v_data_type = 'VARCHAR2') then
+                        DBMS_OUTPUT.PUT(' ('||v_data_length||')');
+                    end if;
+                    if(v_data_nullable = 'N') then
+                        DBMS_OUTPUT.PUT(' NOT NULL');
+                    end if;
+                    DBMS_OUTPUT.PUT_LINE(',');
+                end if;
+                
+        end loop;--end Columns
+    
+    close c_data;
+    
+    open c_pk;
+    loop --PK name // each PK
+        fetch c_pk into v_pk, v_pk_table_name;
+        exit when c_pk%notfound;   
+        if(v_pk_table_name = v_table_name) then
+            DBMS_OUTPUT.PUT('CONSTRAINT ' || v_pk || ' PRIMARY KEY (');
+        end if;    
+        open c_pkname(v_pk_table_name);
+        loop --Table name, Column name - PK
+            fetch c_pkname into v_index_name;
+            exit when c_pkname%notfound;
+                
+            if(v_pk_table_name = v_table_name) then
+                if(v_counter > 0) then
+                    DBMS_OUTPUT.PUT(', ');
+                end if;
+                DBMS_OUTPUT.PUT(v_index_name);
+                v_counter := v_counter + 1;    
+            end if;
+        end loop; -- end Table Name, Column Name - PK
+        v_counter :=0;
+        close c_pkname;        
+        end loop; -- end PK name
+        DBMS_OUTPUT.PUT_LINE(')');
+        close c_pk;
     DBMS_OUTPUT.PUT_LINE(');');
-    end loop;
+    end loop; --end Table Name - Create
+    close c_table_name; -- end of step 1
 END;
+
 set serveroutput on size 30000;
 execute create_tables;
 
