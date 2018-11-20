@@ -86,15 +86,18 @@ create or replace procedure create_tables is
         select table_name
         from user_tables
     )
+    
     loop
+    DBMS_OUTPUT.PUT_LINE('CREATE TABLE '||ind.table_name||'(');
     for r in(
         select column_name, data_type, data_length
         from user_tab_columns
         where table_name = ind.table_name
     )
     loop    
-    DBMS_OUTPUT.PUT_LINE('CREATE TABLE '||ind.table_name||'('||r.column_name||' '||r.data_type||'('||r.data_length||'))');
+    DBMS_OUTPUT.PUT_LINE(r.column_name||' '||r.data_type||'('||r.data_length||')');
     end loop;
+    DBMS_OUTPUT.PUT_LINE(');');
     end loop;
     END;
 set serveroutput on size 30000;
