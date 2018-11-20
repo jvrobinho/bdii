@@ -79,50 +79,6 @@ SELECT table_name FROM user_tables;
 select table_name, column_name, data_type, data_length
             from user_tab_columns;
 
-
-create or replace procedure create_tables is
-    BEGIN
-    
-    for ind in(
-        select table_name
-        from user_tables
-    )
-    
-    --Colunas
-    loop
-    DBMS_OUTPUT.PUT_LINE('CREATE TABLE '||ind.table_name||'(');
-    for r in(
-        select column_name, data_type, data_length
-        from user_tab_columns
-        where table_name = ind.table_name
-    )
-    loop    
-    DBMS_OUTPUT.PUT_LINE(r.column_name||' '||r.data_type||'('||r.data_length||')');
-    end loop;
-    
-    --PK
-    for pk in (
-        select distinct a.constraint_name from user_constraints a
-        where a.constraint_type = 'P'
-    )
-    loop
-    DBMS_OUTPUT.PUT_LINE('CONSTRAINT' || pk.constraint_name || 'PRIMARY KEY (');
-    for prim_key in (
-        select cols.column_name
-        from user_constraints cons, user_cons_columns cols
-        where cons.constraint_type = 'P'
-        and cons.constraint_name = pk.constraint_name
-        and cons.owner = cols.owner
-        order by cols.table_name, cols.position
-    )
-    loop
-    DBMS_OUTPUT.PUT_LINE(prim_key.column_name || ',');
-    end loop;
-    
-    end loop;
-    DBMS_OUTPUT.PUT_LINE(');');
-    end loop;
-END;
 create or replace procedure create_tables is
     BEGIN
 
@@ -140,7 +96,7 @@ create or replace procedure create_tables is
         where table_name = ind.table_name
     )
     loop    
-    DBMS_OUTPUT.PUT_LINE(r.column_name||' '||r.data_type||'('||r.data_length||')');
+    DBMS_OUTPUT.PUT_LINE(r.column_name||' '||r.data_type||'('||r.data_length||'),');
     end loop;
 --
 --    --PK
