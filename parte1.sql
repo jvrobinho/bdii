@@ -6,7 +6,9 @@
 /*Item 1:                                                                             */
 /*  Consulta os indíces do usuário, junto das tabelas e colunas que eles referenciam. */
 /**************************************************************************************/
-select index_name, table_name, column_name from user_ind_columns;
+select index_name, table_name, column_name
+from user_ind_columns
+order by table_name;
 
 /******************************************************************************/
 /*Consulta as constraints do usuario. Usando para ver o metadata das FK e PK. */
@@ -61,10 +63,15 @@ end;
 /*  Lista as FK com as tabelas e colunas. */
 /******************************************/
 
-select b.constraint_name as FK, b.table_name FK_TABLE, a.column_name as REFS_COLUMN, a.table_name as ON_TABLE
-    from user_cons_columns a, user_constraints b
-    where b.constraint_type='R'
-    and b.r_constraint_name = a.constraint_name;
+select a.constraint_name as FK, a.table_name as FK_TABLE, b.column_name as FK_COLUMN,
+    b_ref.column_name as REFS_COLUMN, a_ref.table_name as ON_TABLE
+from user_constraints a
+    left join user_cons_columns b on b.constraint_name = a.constraint_name
+    left join user_constraints a_ref on a_ref.constraint_name = a.r_constraint_name
+    left join user_cons_columns b_ref on b_ref.constraint_name = a.r_constraint_name
+where a.constraint_type = 'R'
+order by a.table_name, b.column_name;
+    
     
 /****************************************/
 /*Consulta todas as tabelas do usuário. */
@@ -102,7 +109,6 @@ end;
 /*  tamanho do dado (quando necessário), nulidade/obrigatoriedade  */
 /*  e chaves primárias.                                            */
 /*******************************************************************/        
-
 create or replace procedure create_tables is
 
 --Nome da tabela atual.
@@ -122,6 +128,15 @@ v_index_name user_cons_columns.column_name%type;
 
 --Contador para saber se a PK é simples ou composta.
 v_counter NUMBER := 0;
+
+--Nome da FK, tabela a qual ela pertence e coluna.
+v_fk_name user_constraints.constraint_name%type;
+v_fk_table user_constraints.table_name%type;
+v_fk_column user_cons_columns.column_name%type;
+
+--Coluna e tabela que a FK referencia.
+v_fk_column_ref user_cons_columns.column_name%type;
+v_index_table user_constraints.table_name%type;
 
 --Seleciona o nome das tabelas.
 cursor c_table_name is
@@ -149,9 +164,18 @@ cursor c_pkname(v_table_name in user_tables.table_name%type) is
         and b.constraint_type='P'
         and a.constraint_name = b.constraint_name
         and a.table_name = v_table_name;
-        
-    BEGIN
-    
+
+--Pega os dados da FK
+cursor c_fk is
+    select a.constraint_name as FK, a.table_name as FK_TABLE, b.column_name as FK_COLUMN,
+        b_ref.column_name as REFS_COLUMN, a_ref.table_name as ON_TABLE
+    from user_constraints a
+        left join user_cons_columns b on b.constraint_name = a.constraint_name
+        left join user_constraints a_ref on a_ref.constraint_name = a.r_constraint_name
+        left join user_cons_columns b_ref on b_ref.constraint_name = a.r_constraint_name
+    where a.constraint_type = 'R'
+    order by a.table_name, b.column_name;
+BEGIN
     --Passo 1: criar tabelas com colunas e primary keys
     open c_table_name; 
     
@@ -216,14 +240,29 @@ cursor c_pkname(v_table_name in user_tables.table_name%type) is
         
         --Terminou de gerar as PK.
         close c_pk;
+        
+        
     DBMS_OUTPUT.PUT_LINE(');');
+    DBMS_OUTPUT.PUT_LINE('');
+
     end loop; --end Table Name - Create
     
     --Terminou de gerar os scripts de create table.
-    close c_table_name; 
+    close c_table_name;
+    
+        --Passo 1.3: Alterar as tabelas com as FKs.
+        open c_fk;
+        loop
+            fetch c_fk into v_fk_name, v_fk_table, v_fk_column, v_fk_column_ref, v_index_table;
+            exit when c_fk%notfound;
+            DBMS_OUTPUT.PUT_LINE('ALTER TABLE ' || v_fk_table || ' ADD CONSTRAINT ' || v_fk_name);
+            DBMS_OUTPUT.PUT_LINE('  FOREIGN KEY (' ||  v_fk_column || ') ' || 'REFERENCES '  
+                                    || v_index_table || '(' || v_fk_column_ref || ') ;' );
+            DBMS_OUTPUT.PUT_LINE('');
+        end loop;
+        close c_fk;
 END;
 
---Seta o tamanho maximo da output.
-set serveroutput on size 30000;
-execute create_tables;
-
+--Seta o tamanho maximo da output. Descomente para executar
+--set serveroutput on size 30000;
+--execute create_tables;
