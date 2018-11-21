@@ -1,4 +1,8 @@
-select b.constraint_name as FK, b.table_name FK_TABLE, a.column_name as REF_COLUMN, a.table_name as ON_TABLE
-    from user_cons_columns a, user_constraints b
-    where b.constraint_type='R'
-    and b.r_constraint_name = a.constraint_name;
+select a.constraint_name as FK, a.table_name as FK_TABLE, b.column_name as FK_COLUMN,
+    b_ref.column_name as REFS_COLUMN, a_ref.table_name as ON_TABLE
+from user_constraints a
+    left join user_cons_columns b on b.constraint_name = a.constraint_name
+    left join user_constraints a_ref on a_ref.constraint_name = a.r_constraint_name
+    left join user_cons_columns b_ref on b_ref.constraint_name = a.r_constraint_name
+where a.constraint_type = 'R'
+order by a.table_name, b.column_name;
