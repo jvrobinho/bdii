@@ -11,8 +11,8 @@ select index_name, table_name, column_name from user_ind_columns;
 /******************************************************************************/
 /*Consulta as constraints do usuario. Usando para ver o metadata das FK e PK. */
 /******************************************************************************/
---select * from user_constraints;
---select constraint_name, r_constraint_name from 
+select * from user_constraints;
+
 /***************************************************************************************/
 /*Consulta todas as colunas e suas tabelas referenciadas pelas constraints do usuário. */
 /***************************************************************************************/
@@ -22,7 +22,7 @@ select * from user_cons_columns;
 /*Consulta a informação de todas as tabelas do usuário.                                */
 /***************************************************************************************/
 select * from user_tab_columns;
-select * from user_constraints;
+
 /****************************************/
 /*Consulta o nome das PK das tabelas.   */
 /****************************************/
