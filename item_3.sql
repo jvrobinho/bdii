@@ -1,6 +1,4 @@
-select a.owner, a.constraint_name, a.table_name, a.column_name
+select b.constraint_name as FK, b.table_name FK_TABLE, a.column_name as REF_COLUMN, a.table_name as ON_TABLE
     from user_cons_columns a, user_constraints b
-    where a.owner = b.owner
-    and b.constraint_type='R'
-    and a.constraint_name = b.constraint_name;
-    
+    where b.constraint_type='R'
+    and b.r_constraint_name = a.constraint_name;
