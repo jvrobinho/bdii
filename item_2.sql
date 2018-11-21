@@ -1,3 +1,7 @@
+/*************************************************/
+/*Item 2:                                        */
+/* Dropa todos os índices criados em uma tabela. */
+/*************************************************/
 create or replace procedure drop_all_indexes(nome_tabela in string) is
 begin 
     for ind in 
