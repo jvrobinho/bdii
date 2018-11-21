@@ -169,7 +169,7 @@ cursor c_pkname(v_table_name in user_tables.table_name%type) is
             
                 --Achou uma row com os dados da tabela.
                 if(v_data_table_name = v_table_name) then
-                    DBMS_OUTPUT.PUT(    v_column_name||' '||v_data_type);
+                    DBMS_OUTPUT.PUT('   ' || v_column_name||' '||v_data_type);
                     if (v_data_type != 'NUMBER') then      --Tamanho do VARCHAR.
                         DBMS_OUTPUT.PUT(' ('||v_data_length||')');
                     end if;
@@ -227,4 +227,3 @@ END;
 set serveroutput on size 30000;
 execute create_tables;
 
-;
