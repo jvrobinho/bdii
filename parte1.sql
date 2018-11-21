@@ -11,8 +11,8 @@ select index_name, table_name, column_name from user_ind_columns;
 /******************************************************************************/
 /*Consulta as constraints do usuario. Usando para ver o metadata das FK e PK. */
 /******************************************************************************/
-select * from user_constraints;
-
+--select * from user_constraints;
+--select constraint_name, r_constraint_name from 
 /***************************************************************************************/
 /*Consulta todas as colunas e suas tabelas referenciadas pelas constraints do usuário. */
 /***************************************************************************************/
@@ -22,7 +22,7 @@ select * from user_cons_columns;
 /*Consulta a informação de todas as tabelas do usuário.                                */
 /***************************************************************************************/
 select * from user_tab_columns;
-
+select * from user_constraints;
 /****************************************/
 /*Consulta o nome das PK das tabelas.   */
 /****************************************/
@@ -61,11 +61,10 @@ end;
 /*  Lista as FK com as tabelas e colunas. */
 /******************************************/
 
-select a.owner, a.constraint_name, a.table_name, a.column_name
+select b.constraint_name as FK, b.table_name FK_TABLE, a.column_name as REF_COLUMN, a.table_name as ON_TABLE
     from user_cons_columns a, user_constraints b
-    where a.owner = b.owner
-    and b.constraint_type='R'
-    and a.constraint_name = b.constraint_name;
+    where b.constraint_type='R'
+    and b.r_constraint_name = a.constraint_name;
     
 /****************************************/
 /*Consulta todas as tabelas do usuário. */
@@ -133,7 +132,9 @@ cursor c_table_name is
 cursor c_data is
     select a.column_name, a.data_type, a.data_length, a.table_name, a.nullable
     from user_tab_columns a, user_tables b
-    where a.table_name = b.table_name;
+    where a.table_name = b.table_name
+    group by a.table_name;
+
     
 --Pega o nome das chaves primárias e a tabela às quais pertencem.
 cursor c_pk is
@@ -168,8 +169,8 @@ cursor c_pkname(v_table_name in user_tables.table_name%type) is
             
                 --Achou uma row com os dados da tabela.
                 if(v_data_table_name = v_table_name) then
-                    DBMS_OUTPUT.PUT(v_column_name||' '||v_data_type);
-                    if (v_data_type = 'VARCHAR2') then      --Tamanho do VARCHAR.
+                    DBMS_OUTPUT.PUT(    v_column_name||' '||v_data_type);
+                    if (v_data_type != 'NUMBER') then      --Tamanho do VARCHAR.
                         DBMS_OUTPUT.PUT(' ('||v_data_length||')');
                     end if;
                     if(v_data_nullable = 'N') then          --Dado obrigatório.
@@ -189,7 +190,7 @@ cursor c_pkname(v_table_name in user_tables.table_name%type) is
         fetch c_pk into v_pk, v_pk_table_name;
         exit when c_pk%notfound;        --Terminou de varrer a tabela das PK?    
         if(v_pk_table_name = v_table_name) then         --Achou a PK da tabela atual.
-            DBMS_OUTPUT.PUT('CONSTRAINT ' || v_pk || ' PRIMARY KEY (');
+            DBMS_OUTPUT.PUT('   CONSTRAINT ' || v_pk || ' PRIMARY KEY (');
         end if;
         
         --Pegar a(s) coluna(s) referenciada(s) pela PK.
@@ -223,6 +224,7 @@ cursor c_pkname(v_table_name in user_tables.table_name%type) is
 END;
 
 --Seta o tamanho maximo da output.
---set serveroutput on size 30000;
---execute create_tables;
+set serveroutput on size 30000;
+execute create_tables;
 
+;
