@@ -61,7 +61,7 @@ end;
 /*  Lista as FK com as tabelas e colunas. */
 /******************************************/
 
-select b.constraint_name as FK, b.table_name FK_TABLE, a.column_name as REF_COLUMN, a.table_name as ON_TABLE
+select b.constraint_name as FK, b.table_name FK_TABLE, a.column_name as REFS_COLUMN, a.table_name as ON_TABLE
     from user_cons_columns a, user_constraints b
     where b.constraint_type='R'
     and b.r_constraint_name = a.constraint_name;
@@ -133,7 +133,7 @@ cursor c_data is
     select a.column_name, a.data_type, a.data_length, a.table_name, a.nullable
     from user_tab_columns a, user_tables b
     where a.table_name = b.table_name
-    group by a.table_name;
+    order by table_name, a.column_id;
 
     
 --Pega o nome das chaves primárias e a tabela às quais pertencem.
