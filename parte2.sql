@@ -37,7 +37,7 @@ BEGIN
     INSERT INTO artist VALUES (artist_id, name_artist);
 END;
 
-PROCEDURE update_name_artist(artist_id in number, name_artist in varcha2) IS
+PROCEDURE update_name_artist(artist_id in number, name_artist in varchar2) IS
 BEGIN
     IF name_artist = null THEN
         error_pkg.raise_error ('O nome do artista nao pode estar em branco');
@@ -72,7 +72,7 @@ BEGIN
     INSERT INTO artist VALUES (genreid, name_genre);
 END;
 
-PROCEDURE update_name_genre(genre_id in number, name_genre in varcha2) IS
+PROCEDURE update_name_genre(genre_id in number, name_genre in varchar2) IS
 BEGIN
     IF name_genre = null THEN
         error_pkg.raise_error ('O nome do genero nao pode estar em branco');
