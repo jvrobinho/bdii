@@ -1,0 +1,3 @@
+Regra semântica 1: O nome do artista não pode estar em branco.
+Regra semântica 2: A data de contratação do empregado não pode ser nula.
+Regra semântica 3:O nome do gênero não pode estar em branco.

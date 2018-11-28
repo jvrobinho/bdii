@@ -29,7 +29,7 @@ CREATE OR REPLACE TRIGGER GENRE_NAME
            
 --Questao 3:
 --Procedure pra Regra semantica 1:
-PROCEDURE insert_artist(artist_id in number, name_artist in varchar2) IS
+create or replace PROCEDURE insert_artist(artist_id in number, name_artist in varchar2) IS
 BEGIN
     IF name_artist is null THEN
         RAISE_APPLICATION_ERROR (-20000, 'O nome do artista não pode estar em branco');
@@ -37,7 +37,7 @@ BEGIN
     INSERT INTO artist VALUES (artist_id, name_artist);
 END;
 
-PROCEDURE update_name_artist(artist_id in number, name_artist in varchar2) IS
+create or replace PROCEDURE update_name_artist(artist_id in number, name_artist in varchar2) IS
 BEGIN
     IF name_artist is null THEN
         RAISE_APPLICATION_ERROR (-20000, 'O nome do artista não pode estar em branco');
@@ -46,7 +46,7 @@ BEGIN
 END;    
 
 --Procedure  pra Regra semantica 2:
-PROCEDURE insert_hiredate(employee_id in number,first_name in varchar2, last_name in varchar2, hire_date in date) IS
+create or replace PROCEDURE insert_hiredate(employee_id in number,first_name in varchar2, last_name in varchar2, hire_date in date) IS
 BEGIN
     IF hire_date is null THEN
         RAISE_APPLICATION_ERROR (-20000, 'O HireDate do Employee nao pode estar em branco');
@@ -54,7 +54,7 @@ BEGIN
     INSERT INTO employee VALUES (employee_id, first_name,last_name, hire_date);
 END;
 
-PROCEDURE update_hiredate(employee_id in number,first_name in varchar2, last_name in varchar2, hire_date in date) IS
+create or replace  PROCEDURE update_hiredate(employee_id in number,first_name in varchar2, last_name in varchar2, hire_date in date) IS
 BEGIN
     IF hire_date is null THEN
         RAISE_APPLICATION_ERROR (-20000, 'O HireDate do Employee nao pode estar em branco');
@@ -64,7 +64,7 @@ END;
 
 --Procedure pra Regra semantica 3:
 
-PROCEDURE insert_genre_name(genreid in number, name_genre in varchar2) IS
+create or replace  PROCEDURE insert_genre_name(genreid in number, name_genre in varchar2) IS
 BEGIN
     IF name_genre is null THEN
         RAISE_APPLICATION_ERROR (-20000,'O nome do genero nao pode estar em branco');
@@ -72,10 +72,10 @@ BEGIN
     INSERT INTO genre VALUES (genreid, name_genre);
 END;
 
-PROCEDURE update_name_genre(genre_id in number, name_genre in varchar2) IS
+create or replace PROCEDURE update_name_genre(genre_id in number, name_genre in string) IS
 BEGIN
     IF name_genre is null THEN
-        RAISE_APPLICATI ON_ERROR (-20000,'O nome do genero nao pode estar em branco'); 
+        RAISE_APPLICATION_ERROR (-20000,'O nome do genero nao pode estar em branco'); 
     END IF;
     UPDATE genre set name = name_genre WHERE genreid = genre_id;
 END;    
